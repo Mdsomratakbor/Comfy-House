@@ -14,7 +14,7 @@ const productsDOM = document.querySelector(".products-center");
 // cart
 let cart = [];
 
-// buttons 
+// buttons DOM
 let buttonsDOM = [];
 
 
@@ -70,34 +70,82 @@ class UI {
         //const buttons = Array.from(document.querySelectorAll(".bag-btn"));
 
         // ES6 approach
-        const buttons = [...document.querySelectorAll('.bag-btn')];
+        const buttons = [...document.querySelectorAll(".bag-btn")];
         buttonsDOM = buttons;
-        buttons.forEach(button => {
+        buttons.forEach((button) => {
             let id = button.dataset.id;
-            let inCart = cart.find(item => item.id === id);
+            let inCart = cart.find((item) => item.id === id);
             if (inCart) {
                 button.innerText = "In Cart";
                 button.disabled = true;
             }
-            button.addEventListener('click', (event) => {
-                event.target.innerText = "In Cart"
+            button.addEventListener("click", (event) => {
+                event.target.innerText = "In Cart";
                 button.disabled = true;
                 // get product from products
+                let cartItem = {...Storage.getProducts(id), qty: 1 };
                 // add product to cart
-                // save cart in local storage
-                // set cart values
-                // display cart items
-                // show the cart
-            })
 
+                // Method 1: first process in array data set multiple time
+                //cart.push(cartItem);
+
+                // Method 2: second process in array data set multiple time
+                cart = [...cart, cartItem];
+                // save cart in local storage
+                Storage.saveCart(cart);
+                // set cart values
+                this.setCartValues(cart);
+                // display cart items
+
+                this.addCartItem(cartItem);
+                // show the cart
+                this.showCart();
+            });
+        });
+    }
+    setCartValues(cart) {
+        let tempTotalAmount = 0;
+        let itemsTotalQty = 0;
+        cart.map(item => {
+            tempTotalAmount += item.price * item.qty;
+            itemsTotalQty += item.qty;
         })
-    };
+        cartTotal.innerText = parseFloat(tempTotalAmount.toFixed(2))
+        cartItems.innerText = parseInt(itemsTotalQty);
+    }
+    addCartItem(item) {
+        const div = document.createElement('div');
+        div.classList.add('cart-item');
+        div.innerHTML = `<img src="${item.image}" alt="cart-product-image">
+                    <div>
+                        <h4>${item.title}</h4>
+                        <h5>$${item.price}</h5>
+                        <span class="remove-item" data-id = ${item.id}>remove</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-chevron-up" data-id = ${item.id}></i>
+                        <p class="item-amount">${item.qty}</p>
+                        <i class="fas fa-chevron-down" data-id = ${item.id}></i>
+                    </div>`;
+        cartContent.appendChild(div);
+    }
+    showCart() {
+        cartOverlay.classList.add('transparentBcg');
+        cartDOM.classList.add("showCart");
+    }
 }
 
 // local storage
 class Storage {
     static saveProducts(products) {
         localStorage.setItem("products", JSON.stringify(products));
+    }
+    static getProducts(id) {
+        let products = JSON.parse(localStorage.getItem("products"));
+        return products.find((product) => product.id === id);
+    }
+    static saveCart(cart) {
+        localStorage.setItem("cart", JSON.stringify(cart));
     }
 }
 
