@@ -61,7 +61,6 @@ class UI {
         });
         productsDOM.innerHTML = result;
     }
-
     getBagButtons() {
         // Method 1
         //const buttons = Array.prototype.slice.call(document.querySelectorAll(".bag-btn"));
@@ -106,16 +105,16 @@ class UI {
     setCartValues(cart) {
         let tempTotalAmount = 0;
         let itemsTotalQty = 0;
-        cart.map(item => {
+        cart.map((item) => {
             tempTotalAmount += item.price * item.qty;
             itemsTotalQty += item.qty;
-        })
-        cartTotal.innerText = parseFloat(tempTotalAmount.toFixed(2))
+        });
+        cartTotal.innerText = parseFloat(tempTotalAmount.toFixed(2));
         cartItems.innerText = parseInt(itemsTotalQty);
     }
     addCartItem(item) {
-        const div = document.createElement('div');
-        div.classList.add('cart-item');
+        const div = document.createElement("div");
+        div.classList.add("cart-item");
         div.innerHTML = `<img src="${item.image}" alt="cart-product-image">
                     <div>
                         <h4>${item.title}</h4>
@@ -130,9 +129,50 @@ class UI {
         cartContent.appendChild(div);
     }
     showCart() {
-        cartOverlay.classList.add('transparentBcg');
+        cartOverlay.classList.add("transparentBcg");
         cartDOM.classList.add("showCart");
     }
+    setupAPP() {
+        cart = Storage.getCart();
+        this.setCartValues(cart);
+        this.populateCart(cart);
+        cartBtn.addEventListener("click", this.showCart);
+        closeCartBtn.addEventListener("click", this.hideCart);
+    }
+    populateCart(cart) {
+        cart.forEach((item) => this.addCartItem(item));
+    }
+    hideCart() {
+        cartOverlay.classList.remove("transparentBcg");
+        cartDOM.classList.remove("showCart");
+    }
+    cartLogic() {
+        // clear cart button
+        clearCartBtn.addEventListener("click", () => {
+            this.clearCart();
+        });
+        // cart functionality
+    }
+    clearCart() {
+        let cartItems = cart.map((item) => item.id);
+        cartItems.forEach(id => this.removeItem(id));
+        console.log(cartContent.children);
+        while (cartContent.children.length > 0) {
+            cartContent.removeChild(cartContent.children[0]);
+        }
+        this.hideCart();
+    }
+    removeItem(id) {
+        cart = cart.filter((item) => item.id !== id);
+        this.setCartValues(cart);
+        Storage.saveCart(cart);
+        let button = this.getSingleButton(id);
+        button.disabled = false;
+        button.innerHTML = `<i class="fas fa-shopping-cart">add to bag</i>`;
+    }
+    getSingleButton(id) {
+        return buttonsDOM.find(button => button.dataset.id === id);
+    };
 }
 
 // local storage
@@ -147,15 +187,22 @@ class Storage {
     static saveCart(cart) {
         localStorage.setItem("cart", JSON.stringify(cart));
     }
+    static getCart() {
+        return localStorage.getItem("cart") ?
+            JSON.parse(localStorage.getItem("cart")) : [];
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const ui = new UI();
     const products = new Products();
+    // setup application
+    ui.setupAPP();
     products.getProducts().then(products => {
         ui.displayProducts(products);
         Storage.saveProducts(products);
     }).then(() => {
         ui.getBagButtons();
+        ui.cartLogic();
     });
 })
